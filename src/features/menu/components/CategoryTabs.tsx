@@ -33,11 +33,11 @@ export default function CategoryTabs({
               key={tab.id}
               onClick={() => onChange(tab.id)}
               className={`
-                whitespace-nowrap py-2.5 px-6 rounded-full font-bold text-sm transition-all duration-300 flex items-center shadow-sm border
+                whitespace-nowrap py-2.5 px-6 rounded-full font-bold text-[15px] transition-all duration-300 flex items-center
                 ${
                   isActive
-                    ? "bg-[#7b2d2d] text-white border-[#7b2d2d] shadow-[#7b2d2d]/20"
-                    : "bg-white text-[#806b6b] border-[#f3f1f1] hover:text-[#1e1414] hover:border-[#D2D2D2] hover:bg-[#fcfcfc]"
+                    ? "bg-[#7b2d2d] text-white shadow-md shadow-[#7b2d2d]/20"
+                    : "bg-white text-[#1e1414] hover:bg-[#fcfcfc] shadow-sm"
                 }
               `}
               aria-current={isActive ? "page" : undefined}

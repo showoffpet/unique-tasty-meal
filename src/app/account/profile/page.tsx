@@ -22,20 +22,20 @@ export default async function ProfilePage() {
     .single();
 
   return (
-    <div className="min-h-screen bg-[#F8F8F8]">
-      <div className="max-w-2xl mx-auto px-6 py-12">
+    <div className="flex flex-col gap-6 w-full">
+      <div>
         <h1 className="text-2xl font-bold text-[#1e1414] mb-2">Edit Profile</h1>
-        <p className="text-sm text-[#999999] mb-8">
+        <p className="text-sm text-[#999999]">
           Manage your personal information and preferences
         </p>
-        <ProfileForm
-          initialData={{
-            name: profile?.name || "",
-            email: profile?.email || user.email || "",
-            avatarUrl: profile?.avatar_url || "",
-          }}
-        />
       </div>
+      <ProfileForm
+        initialData={{
+          name: profile?.name || "",
+          email: profile?.email || user.email || "",
+          avatarUrl: profile?.avatar_url || "",
+        }}
+      />
     </div>
   );
 }

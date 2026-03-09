@@ -152,7 +152,7 @@ export default function Navbar() {
                   </div>
                   <div className="py-1">
                     <Link
-                      href="/profile"
+                      href="/account/profile"
                       onClick={() => setIsProfileDropdownOpen(false)}
                       className="flex items-center gap-2 px-4 py-2 text-sm text-[#806b6b] hover:text-[#1e1414] hover:bg-[#fcfcfc] transition-colors"
                     >
@@ -168,7 +168,7 @@ export default function Navbar() {
                       Order History
                     </Link>
                     <Link
-                      href="/addresses"
+                      href="/account/addresses"
                       onClick={() => setIsProfileDropdownOpen(false)}
                       className="flex items-center gap-2 px-4 py-2 text-sm text-[#806b6b] hover:text-[#1e1414] hover:bg-[#fcfcfc] transition-colors"
                     >
@@ -176,7 +176,7 @@ export default function Navbar() {
                       Saved Addresses
                     </Link>
                     <Link
-                      href="/preferences"
+                      href="/account/preferences"
                       onClick={() => setIsProfileDropdownOpen(false)}
                       className="flex items-center gap-2 px-4 py-2 text-sm text-[#806b6b] hover:text-[#1e1414] hover:bg-[#fcfcfc] transition-colors"
                     >

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import Button from "../../../components/ui/Button";
 
 interface SearchBarProps {
   initialQuery?: string;
@@ -10,6 +9,7 @@ interface SearchBarProps {
   placeholder?: string;
   autoFocus?: boolean;
   className?: string;
+  liveSearch?: boolean;
 }
 
 export default function SearchBar({
@@ -19,6 +19,7 @@ export default function SearchBar({
   placeholder = "Search for meals, ingredients...",
   autoFocus = false,
   className = "",
+  liveSearch = false,
 }: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -38,8 +39,16 @@ export default function SearchBar({
     onSearch(query.trim());
   };
 
+  const handleChange = (value: string) => {
+    setQuery(value);
+    if (liveSearch) {
+      onSearch(value.trim());
+    }
+  };
+
   const handleClear = () => {
     setQuery("");
+    onSearch("");
     if (onClear) onClear();
     inputRef.current?.focus();
   };
@@ -47,9 +56,9 @@ export default function SearchBar({
   return (
     <form
       onSubmit={handleSubmit}
-      className={`relative flex items-center w-full max-w-2xl mx-auto shadow-sm transition-shadow focus-within:shadow-md rounded-full bg-white border border-[#f3f1f1] hover:border-[#D2D2D2] p-1 ${className}`}
+      className={`relative flex items-center w-full max-w-2xl mx-auto shadow-sm transition-shadow focus-within:shadow-md rounded-[32px] bg-white border border-[#f3f1f1] hover:border-[#D2D2D2] p-1.5 pl-4 ${className}`}
     >
-      <div className="pl-4 pr-2 text-[#999999]">
+      <div className="text-[#999999] pr-3">
         <svg
           className="w-5 h-5"
           fill="none"
@@ -69,7 +78,7 @@ export default function SearchBar({
         ref={inputRef}
         type="text"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
         className="flex-1 min-w-0 bg-transparent py-2.5 px-1 text-sm sm:text-base text-[#1e1414] placeholder-[#999999] outline-none"
       />
@@ -97,13 +106,12 @@ export default function SearchBar({
         </button>
       )}
 
-      <Button
+      <button
         type="submit"
-        variant="primary"
-        className="rounded-full px-6 py-2.5 shadow-none"
+        className="bg-[#7b2d2d] hover:bg-[#5a2222] text-white font-bold text-sm px-6 sm:px-8 py-3 rounded-l-md rounded-r-[32px] transition-colors ml-1 shadow-none"
       >
         Search
-      </Button>
+      </button>
     </form>
   );
 }

@@ -9,42 +9,10 @@ import Skeleton from "../../components/ui/Skeleton";
 import Button from "../../components/ui/Button";
 import type { Database } from "@/lib/supabase/database.types";
 
-// Mock data (replace with Supabase data fetching later)
-const MOCK_CATEGORIES = [
-  { id: "cat-1", name: "Starters", display_order: 1 },
-  { id: "cat-2", name: "Mains", display_order: 2 },
-  { id: "cat-3", name: "Sides", display_order: 3 },
-  { id: "cat-4", name: "Desserts", display_order: 4 },
-];
-
-type MealRow = Database["public"]["Tables"]["meals"]["Row"];
-
-const MOCK_MEALS: MealRow[] = Array.from({ length: 20 }).map((_, i) => ({
-  id: `meal-${i}`,
-  name: `Delicious Meal ${i + 1}`,
-  description:
-    "A wonderful description of this fantastic dish, full of flavor and made with the freshest ingredients.",
-  base_price: 12.99 + (i % 5) * 5,
-  image_url: `https://picsum.photos/seed/${i + 100}/400/300`,
-  category_id: `cat-${(i % 4) + 1}`,
-  is_available: i % 7 !== 0,
-  preparation_time: 15 + (i % 3) * 5,
-  spice_level: i % 4,
-  dietary_tags: i % 3 === 0 ? ["vegetarian"] : [],
-  add_ons: null,
-  allergens: null,
-  average_rating: null,
-  created_at: new Date().toISOString(),
-  display_order: i,
-  ingredients: null,
-  nutritional_info: null,
-  portion_options: null,
-  total_reviews: null,
-  updated_at: new Date().toISOString(),
-}));
+import { MOCK_CATEGORIES, MOCK_MEALS } from "@/lib/mockData";
 
 export default function MenuDisplayPage() {
-  const [activeCategoryId, setActiveCategoryId] = useState<string>("cat-1");
+  const [activeCategoryId, setActiveCategoryId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isRestaurantClosed, setIsRestaurantClosed] = useState(false);
@@ -92,6 +60,7 @@ export default function MenuDisplayPage() {
         meal.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+    if (activeCategoryId === "all") return true;
     return meal.category_id === activeCategoryId;
   });
 
@@ -133,43 +102,53 @@ export default function MenuDisplayPage() {
     <div className="min-h-screen bg-[#fcfcfc] pb-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header & Search */}
-        <div className="mb-10 text-center relative max-w-2xl mx-auto pt-4 md:pt-8 bg">
+        <div className="mb-10 text-center relative max-w-3xl mx-auto pt-4 md:pt-8 bg">
           <h1 className="text-4xl md:text-5xl font-black text-[#1e1414] tracking-tight mb-4">
             Our Menu
           </h1>
-          <p className="text-[#806b6b] text-base md:text-lg mb-8 max-w-xl mx-auto">
+          <p className="text-[#806b6b] text-base md:text-lg mb-10 max-w-xl mx-auto">
             Discover a variety of delicious, customizable meals crafted with
             fresh ingredients and authentic flavors.
           </p>
-          <div className="relative z-20 shadow-xl shadow-[#7b2d2d]/5 rounded-2xl">
+
+          <div className="relative z-20 flex flex-col items-center gap-6">
             <SearchBar
               onSearch={handleSearch}
-              placeholder="Search meals, ingredients or dietary preferences..."
+              placeholder="What are you craving today? (e.g. Jollof, Egusi, Suya...)"
+              liveSearch
             />
-          </div>
-        </div>
 
-        {/* Categories (Sticky) */}
-        {!searchQuery && (
-          <div className="sticky top-0 z-10 bg-[#fcfcfc]/95 backdrop-blur-sm pt-4 pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-            {isLoading ? (
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton
-                    key={i}
-                    className="h-10 w-24 rounded-full flex-shrink-0"
-                  />
-                ))}
+            {/* Categories */}
+            {!searchQuery && (
+              <div className="w-full max-w-3xl mx-auto">
+                {isLoading ? (
+                  <div className="flex gap-4 overflow-x-auto pb-2 justify-center">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton
+                        key={i}
+                        className="h-11 w-28 rounded-full flex-shrink-0"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex justify-center">
+                    <CategoryTabs
+                      tabs={[
+                        { id: "all", label: "All Menu" },
+                        ...MOCK_CATEGORIES.map((c) => ({
+                          id: c.id,
+                          label: c.name,
+                        })),
+                      ]}
+                      activeTabId={activeCategoryId}
+                      onChange={setActiveCategoryId}
+                    />
+                  </div>
+                )}
               </div>
-            ) : (
-              <CategoryTabs
-                tabs={MOCK_CATEGORIES.map((c) => ({ id: c.id, label: c.name }))}
-                activeTabId={activeCategoryId}
-                onChange={setActiveCategoryId}
-              />
             )}
           </div>
-        )}
+        </div>
 
         {searchQuery && (
           <div className="mb-6 flex items-center justify-between">
