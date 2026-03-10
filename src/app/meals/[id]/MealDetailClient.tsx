@@ -20,6 +20,7 @@ import DietaryBadges from "@/features/menu/components/DietaryBadges";
 import MealCard from "@/features/menu/components/MealCard";
 import type { Database } from "@/lib/supabase/database.types";
 import { useCartStore } from "@/store/cartStore";
+import toast from "react-hot-toast";
 
 type MealRow = Database["public"]["Tables"]["meals"]["Row"];
 
@@ -109,6 +110,17 @@ export default function MealDetailClient({
 
     setTimeout(() => {
       setIsAdding(false);
+      toast.success(`${quantity}x ${meal.name} added to cart!`, {
+        duration: 3000,
+        position: "bottom-right",
+        style: {
+          background: "#FFF",
+          color: "#1e1414",
+          borderRadius: "12px",
+          fontWeight: "bold",
+          border: "1px solid #e2e8f0",
+        },
+      });
     }, 500);
   };
 

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Minus, Plus, Trash2, ArrowRight } from "lucide-react";
 import PriceDisplay from "@/components/ui/PriceDisplay";
 import { useCartStore } from "@/store/cartStore";
+import CheckoutAddressSelector from "@/features/delivery-addresses/components/CheckoutAddressSelector";
 
 export default function CartClient() {
   const { items, updateQuantity, removeItem, cartTotal } = useCartStore();
@@ -137,7 +138,9 @@ export default function CartClient() {
       </div>
 
       {/* Order Summary Sidebar */}
-      <div className="w-full lg:w-96 shrink-0">
+      <div className="w-full lg:w-96 shrink-0 flex flex-col gap-6">
+        <CheckoutAddressSelector />
+
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#f3f1f1] sticky top-24">
           <h2 className="text-xl font-bold text-[#1e1414] mb-6">
             Order Summary

@@ -16,12 +16,15 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
+import { useCartStore } from "@/store/cartStore";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
   const supabase = createClient();
+  const items = useCartStore((state) => state.items);
+  const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -123,7 +126,11 @@ export default function Navbar() {
             className="p-2.5 text-[#1e1414] hover:bg-[#7b2d2d]/5 rounded-full transition-colors relative group"
           >
             <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#7b2d2d] rounded-full border-2 border-white" />
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#7b2d2d] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white px-1">
+                {itemCount}
+              </span>
+            )}
           </Link>
 
           {user ? (

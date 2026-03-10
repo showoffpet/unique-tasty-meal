@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
 import Toggle from "../../../components/ui/Toggle";
+import { usePlacesWidget } from "react-google-autocomplete";
 import type { Database } from "@/lib/supabase/database.types";
 
 type AddressRow =
@@ -60,6 +61,49 @@ export default function AddressForm({
     return Object.keys(newErrors).length === 0;
   };
 
+  const { ref: placesRef } = usePlacesWidget<HTMLInputElement>({
+    apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+    // Use any because @types/google.maps is not installed
+    onPlaceSelected: (place: any) => {
+      let street = place.name || "";
+      let city = "";
+      let postal = "";
+
+      place.address_components?.forEach((component: any) => {
+        const types = component.types;
+        if (types.includes("street_number")) {
+          street = `${component.long_name} ${street}`;
+        }
+        if (types.includes("route") && !street.includes(component.long_name)) {
+          street = `${street} ${component.long_name}`.trim();
+        }
+        if (types.includes("locality")) {
+          city = component.long_name;
+        }
+        if (types.includes("postal_code")) {
+          postal = component.long_name;
+        }
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        street_address: street || place.formatted_address || "",
+        city: city || prev.city,
+        postal_code: postal || prev.postal_code,
+      }));
+      setErrors((prev) => ({
+        ...prev,
+        street_address: undefined,
+        city: undefined,
+        postal_code: undefined,
+      }));
+    },
+    options: {
+      types: ["address"],
+      componentRestrictions: { country: "us" }, // Optional: constrain to your primary delivery country
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
@@ -90,15 +134,18 @@ export default function AddressForm({
             placeholder="Home"
           />
 
-          <Input
-            label="Street Address *"
-            name="street_address"
-            value={formData.street_address}
-            onChange={handleChange}
-            error={errors.street_address}
-            placeholder="123 Main St"
-            required
-          />
+          <div className="relative">
+            <Input
+              label="Street Address *"
+              name="street_address"
+              value={formData.street_address}
+              onChange={handleChange}
+              error={errors.street_address}
+              placeholder="123 Main St"
+              required
+              inputRef={placesRef}
+            />
+          </div>
 
           <Input
             label="Apt, Suite, Bldg (optional)"

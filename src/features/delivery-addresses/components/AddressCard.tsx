@@ -24,10 +24,10 @@ export default function AddressCard({
 }: AddressCardProps) {
   return (
     <div
-      className={`bg-white rounded-xl border border-[#f3f1f1] p-5 relative group ${className}`}
+      className={`bg-white rounded-xl shadow-sm border border-[#f3f1f1] p-4 relative group hover:shadow-md transition-shadow ${className}`}
     >
       {address.is_default && (
-        <span className="absolute top-5 right-5 text-[10px] font-bold uppercase tracking-wide bg-[#f3f1f1] text-[#806b6b] px-2 py-1 rounded">
+        <span className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wide bg-[#f3f1f1] text-[#806b6b] px-2 py-1 rounded">
           Default
         </span>
       )}

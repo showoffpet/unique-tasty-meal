@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import Navbar from "@/components/layout/Navbar";
+import { Toaster } from "react-hot-toast";
 
 export default function RootLayout({
   children,
@@ -27,6 +28,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <Navbar />
+          <Toaster position="bottom-right" />
           <div className="pt-16 md:pt-20">{children}</div>
         </AuthProvider>
       </body>

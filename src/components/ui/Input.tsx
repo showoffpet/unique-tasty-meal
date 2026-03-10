@@ -7,6 +7,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   showPasswordToggle?: boolean;
   helpText?: string;
+  inputRef?: React.Ref<HTMLInputElement>;
 }
 
 export default function Input({
@@ -17,6 +18,7 @@ export default function Input({
   type = "text",
   className = "",
   id,
+  inputRef,
   ...props
 }: InputProps) {
   const [showPassword, setShowPassword] = useState(false);
@@ -35,6 +37,7 @@ export default function Input({
       )}
       <div className="relative">
         <input
+          ref={inputRef}
           id={inputId}
           type={inputType}
           className={`
