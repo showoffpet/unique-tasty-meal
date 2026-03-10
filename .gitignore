@@ -23,6 +23,11 @@
 # misc
 .DS_Store
 *.pem
+supabase/
+.supabase/
+.agents/
+.claude/
+PROGRESS.md
 
 # debug
 npm-debug.log*
