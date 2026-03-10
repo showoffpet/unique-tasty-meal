@@ -33,10 +33,7 @@ export default function MenuDisplayPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [cats, meals] = await Promise.all([
-          getCategories(),
-          getMeals(),
-        ]);
+        const [cats, meals] = await Promise.all([getCategories(), getMeals()]);
         setCategories(cats);
         setAllMeals(meals);
       } catch (err) {
@@ -112,11 +109,11 @@ export default function MenuDisplayPage() {
   }, [handleLoadMore]);
 
   return (
-    <div className="min-h-screen bg-[#fcfcfc] pb-24 relative">
+    <div className="min-h-screen pb-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header & Search */}
         <div className="mb-10 text-center relative max-w-3xl mx-auto pt-4 md:pt-8 bg">
-          <h1 className="text-4xl md:text-5xl font-black text-[#1e1414] tracking-tight mb-4">
+          <h1 className="text-4xl md:text-5xl font-black text-[#7b2d2d] tracking-tight mb-4">
             Our Menu
           </h1>
           <p className="text-[#806b6b] text-base md:text-lg mb-10 max-w-xl mx-auto">

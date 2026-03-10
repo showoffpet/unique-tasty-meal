@@ -13,10 +13,26 @@ import { AdminHeader } from "@/features/admin/components/AdminHeader";
 import { getOrders } from "@/lib/supabase/queries";
 
 const STAGES = [
-  { id: "new", label: "New", color: "bg-blue-50 text-blue-700 border-blue-100" },
-  { id: "confirmed", label: "Confirmed", color: "bg-purple-50 text-purple-700 border-purple-100" },
-  { id: "prepping", label: "Prepping", color: "bg-orange-50 text-orange-700 border-orange-100" },
-  { id: "ready", label: "Ready", color: "bg-green-50 text-green-700 border-green-100" },
+  {
+    id: "pending",
+    label: "New",
+    color: "bg-blue-50 text-blue-700 border-blue-100",
+  },
+  {
+    id: "confirmed",
+    label: "Confirmed",
+    color: "bg-purple-50 text-purple-700 border-purple-100",
+  },
+  {
+    id: "preparing",
+    label: "Prepping",
+    color: "bg-orange-50 text-orange-700 border-orange-100",
+  },
+  {
+    id: "ready",
+    label: "Ready",
+    color: "bg-green-50 text-green-700 border-green-100",
+  },
 ];
 
 interface OrderDisplay {
@@ -29,7 +45,7 @@ interface OrderDisplay {
 }
 
 export default function BatchOrderQueuePage() {
-  const [activeStage, setActiveStage] = useState("new");
+  const [activeStage, setActiveStage] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [orders, setOrders] = useState<OrderDisplay[]>([]);
@@ -42,7 +58,12 @@ export default function BatchOrderQueuePage() {
         const data = await getOrders();
         const mapped: OrderDisplay[] = data.map((o) => {
           const items = o.items as any[];
-          const mealCount = Array.isArray(items) ? items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) : 0;
+          const mealCount = Array.isArray(items)
+            ? items.reduce(
+                (sum: number, item: any) => sum + (item.quantity || 1),
+                0,
+              )
+            : 0;
           const createdAt = new Date(o.created_at);
           const timeAgo = getTimeAgo(createdAt);
 
@@ -90,11 +111,16 @@ export default function BatchOrderQueuePage() {
 
   const getActionForStage = (stage: string) => {
     switch (stage) {
-      case "new": return "Confirm Selected";
-      case "confirmed": return "Start Prepping";
-      case "prepping": return "Mark as Ready";
-      case "ready": return "Mark Completed";
-      default: return "Action";
+      case "pending":
+        return "Confirm Selected";
+      case "confirmed":
+        return "Start Prepping";
+      case "preparing":
+        return "Mark as Ready";
+      case "ready":
+        return "Mark Completed";
+      default:
+        return "Action";
     }
   };
 
@@ -182,7 +208,10 @@ export default function BatchOrderQueuePage() {
                         type="checkbox"
                         className="w-4 h-4 rounded border-[#f3f1f1] text-[#7b2d2d] focus:ring-[#7b2d2d]"
                         onChange={handleSelectAll}
-                        checked={filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length}
+                        checked={
+                          filteredOrders.length > 0 &&
+                          selectedOrders.length === filteredOrders.length
+                        }
                       />
                     </th>
                     <th className="p-4 font-medium">Order Details</th>
@@ -204,22 +233,32 @@ export default function BatchOrderQueuePage() {
                           className="w-4 h-4 rounded border-[#f3f1f1] text-[#7b2d2d] focus:ring-[#7b2d2d]"
                           checked={selectedOrders.includes(order.id)}
                           onChange={(e) => {
-                            if (e.target.checked) setSelectedOrders([...selectedOrders, order.id]);
-                            else setSelectedOrders(selectedOrders.filter((id) => id !== order.id));
+                            if (e.target.checked)
+                              setSelectedOrders([...selectedOrders, order.id]);
+                            else
+                              setSelectedOrders(
+                                selectedOrders.filter((id) => id !== order.id),
+                              );
                           }}
                         />
                       </td>
                       <td className="p-4">
                         <div>
                           <p className="font-bold">{order.id}</p>
-                          <p className="text-xs text-[#806b6b] font-medium">{order.customer}</p>
+                          <p className="text-xs text-[#806b6b] font-medium">
+                            {order.customer}
+                          </p>
                         </div>
                       </td>
                       <td className="p-4 text-center">
-                        <span className="font-bold text-[#7b2d2d]">{order.meals}</span>
+                        <span className="font-bold text-[#7b2d2d]">
+                          {order.meals}
+                        </span>
                       </td>
                       <td className="p-4 text-right">
-                        <span className="font-bold">${order.total.toFixed(2)}</span>
+                        <span className="font-bold">
+                          ${order.total.toFixed(2)}
+                        </span>
                       </td>
                       <td className="p-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5 text-xs font-medium">

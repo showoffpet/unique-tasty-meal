@@ -3,19 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { RefreshCw } from "lucide-react";
 
 interface OrderItem {
-  id: string;
-  menu_items: {
-    name: string;
-    image_url: string;
-  };
-}
-
-interface Order {
-  id: string;
-  status: string;
-  total_amount: number;
-  created_at: string;
-  order_items: OrderItem[];
+  name: string;
+  quantity: number;
 }
 
 export default async function RecentOrdersGrid({ userId }: { userId: string }) {
@@ -25,15 +14,11 @@ export default async function RecentOrdersGrid({ userId }: { userId: string }) {
     .from("orders")
     .select(
       `
-      id, status, total_amount, created_at,
-      order_items (
-        id,
-        menu_items ( name, image_url )
-      )
+      id, order_status, total, created_at, items
     `,
     )
     .eq("user_id", userId)
-    .in("status", ["completed", "cancelled"])
+    .in("order_status", ["completed", "cancelled"])
     .order("created_at", { ascending: false })
     .limit(4);
 
@@ -58,12 +43,16 @@ export default async function RecentOrdersGrid({ userId }: { userId: string }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {orders.map((order) => {
-        const firstItem = order.order_items?.[0]?.menu_items as any;
+      {orders.map((order: any) => {
+        const firstItem = order.items?.[0];
         const itemName =
           firstItem?.name || `Order #${order.id.slice(0, 8).toUpperCase()}`;
-        const itemImage = firstItem?.image_url || "/placeholder.jpg";
-        const itemsCount = order.order_items?.length || 0;
+        const itemImage = "/placeholder.jpg";
+        const itemsCount =
+          order.items?.reduce(
+            (acc: number, item: any) => acc + (item.quantity || 1),
+            0,
+          ) || 0;
         const displayName =
           itemsCount > 1 ? `${itemName} + ${itemsCount - 1}` : itemName;
 
@@ -87,10 +76,12 @@ export default async function RecentOrdersGrid({ userId }: { userId: string }) {
                   </span>
                 </div>
                 <p className="text-sm text-[#806b6b] truncate">
-                  {order.status === "completed" ? "Delivered" : "Cancelled"}
+                  {order.order_status === "completed"
+                    ? "Delivered"
+                    : "Cancelled"}
                 </p>
                 <p className="text-sm font-medium text-[#161313] mt-1">
-                  ${order.total_amount.toFixed(2)}
+                  ${order.total.toFixed(2)}
                 </p>
               </div>
             </div>

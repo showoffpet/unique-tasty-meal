@@ -2,32 +2,20 @@
 
 import React, { useEffect, useState } from "react";
 import { useAddressStore } from "@/store/addressStore";
+import { useCheckoutStore } from "@/features/checkout/store/checkoutStore";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import AddressFormModal from "./AddressFormModal";
 import { AddressFormData } from "./AddressForm";
-import { MapPin } from "lucide-react";
 import toast from "react-hot-toast";
-import type { Database } from "@/lib/supabase/database.types";
 
-type AddressRow =
-  Database["public"]["Tables"]["user_delivery_addresses"]["Row"];
-
-interface CheckoutAddressSelectorProps {
-  onAddressSelect?: (address: AddressRow | null) => void;
-}
-
-export default function CheckoutAddressSelector({
-  onAddressSelect,
-}: CheckoutAddressSelectorProps) {
+export default function CheckoutAddressSelector() {
   const { addresses, fetchAddresses, isLoading, addAddress } =
     useAddressStore();
+  const { deliveryAddressId, setDeliveryAddress } = useCheckoutStore();
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    null,
-  );
 
   useEffect(() => {
     fetchAddresses();
@@ -35,18 +23,18 @@ export default function CheckoutAddressSelector({
 
   // Determine the effective selected address (manual selection or default)
   const activeAddress =
-    addresses.find((a) => a.id === selectedAddressId) ||
+    addresses.find((a) => a.id === deliveryAddressId) ||
     addresses.find((a) => a.is_default) ||
     addresses[0];
 
   useEffect(() => {
-    if (onAddressSelect) {
-      onAddressSelect(activeAddress || null);
+    if (activeAddress && activeAddress.id !== deliveryAddressId) {
+      setDeliveryAddress(activeAddress.id);
     }
-  }, [activeAddress, onAddressSelect]);
+  }, [activeAddress, deliveryAddressId, setDeliveryAddress]);
 
   const handleSelect = (id: string) => {
-    setSelectedAddressId(id);
+    setDeliveryAddress(id);
     setIsPickerOpen(false);
   };
 
@@ -73,44 +61,37 @@ export default function CheckoutAddressSelector({
 
   return (
     <>
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#f3f1f1]">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-[#1e1414] flex items-center gap-2">
-            <MapPin size={20} className="text-[#7b2d2d]" />
-            Delivery Address
-          </h2>
-          {addresses.length > 0 && (
+      <div className="w-full">
+        {activeAddress ? (
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-semibold text-[#1e1414]">
+                  {activeAddress.label || "Address"}
+                </span>
+                {activeAddress.is_default && (
+                  <span className="text-[10px] bg-[#f3f1f1] text-[#806b6b] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
+                    Default
+                  </span>
+                )}
+              </div>
+              <p className="text-[#806b6b] leading-relaxed mb-1">
+                {activeAddress.street_address}
+                {activeAddress.apartment ? `, ${activeAddress.apartment}` : ""}
+                <br />
+                {activeAddress.city} {activeAddress.postal_code}
+              </p>
+            </div>
             <button
               onClick={() => setIsPickerOpen(true)}
               className="text-sm font-semibold text-[#7b2d2d] hover:text-[#561b1b] transition-colors"
             >
               Change
             </button>
-          )}
-        </div>
-
-        {activeAddress ? (
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-[#1e1414]">
-                {activeAddress.label || "Address"}
-              </span>
-              {activeAddress.is_default && (
-                <span className="text-[10px] bg-[#f3f1f1] text-[#806b6b] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
-                  Default
-                </span>
-              )}
-            </div>
-            <p className="text-[#806b6b] leading-relaxed mb-2">
-              {activeAddress.street_address}
-              {activeAddress.apartment ? `, ${activeAddress.apartment}` : ""}
-              <br />
-              {activeAddress.city} {activeAddress.postal_code}
-            </p>
           </div>
         ) : (
           <div className="text-center py-4">
-            <p className="text-[#806b6b] mb-4">No address selected.</p>
+            <p className="text-[#806b6b] mb-4">No delivery address selected.</p>
             <Button
               onClick={() => setIsAddFormOpen(true)}
               variant="secondary"

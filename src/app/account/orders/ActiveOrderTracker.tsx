@@ -5,19 +5,16 @@ import { createClient } from "@/lib/supabase/client";
 import { useOrderRealtimeSubscription } from "@/hooks/useOrderRealtime";
 
 interface OrderItem {
-  id: string;
-  menu_items: {
-    name: string;
-    image_url: string;
-  };
+  name: string;
+  quantity: number;
 }
 
 interface Order {
   id: string;
-  status: string;
-  total_amount: number;
+  order_status: string;
+  total: number;
   created_at: string;
-  order_items: OrderItem[];
+  items: OrderItem[];
 }
 
 export default function ActiveOrderTracker({ userId }: { userId: string }) {
@@ -32,21 +29,17 @@ export default function ActiveOrderTracker({ userId }: { userId: string }) {
         .from("orders")
         .select(
           `
-          id, status, total_amount, created_at,
-          order_items (
-            id,
-            menu_items ( name, image_url )
-          )
+          id, order_status, total, created_at, items
         `,
         )
         .eq("user_id", userId)
-        .in("status", ["pending", "confirmed", "preparing", "ready"])
+        .in("order_status", ["pending", "confirmed", "preparing", "ready"])
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
 
       if (!error && data) {
-        setOrder(data as any as Order);
+        setOrder(data as Order);
       }
       setIsLoading(false);
     }
@@ -58,10 +51,10 @@ export default function ActiveOrderTracker({ userId }: { userId: string }) {
     console.log("Order updated:", payload);
     // If the payload has the new record, update the status
     const updatedRecord = payload.new as Partial<Order>;
-    if (updatedRecord && updatedRecord.status) {
+    if (updatedRecord && updatedRecord.order_status) {
       setOrder((prev) => {
         if (!prev) return prev;
-        return { ...prev, status: updatedRecord.status as string };
+        return { ...prev, order_status: updatedRecord.order_status as string };
       });
     }
   });
@@ -97,7 +90,8 @@ export default function ActiveOrderTracker({ userId }: { userId: string }) {
           No active orders right now
         </h3>
         <p className="text-sm text-[#806b6b] mb-4">
-          When you place an order, you'll be able to track its progress here.
+          When you place an order, you&apos;ll be able to track its progress
+          here.
         </p>
         <a
           href="/menu"
@@ -109,12 +103,14 @@ export default function ActiveOrderTracker({ userId }: { userId: string }) {
     );
   }
 
-  const itemsCount = order.order_items?.length || 0;
+  const itemsCount =
+    order.items?.reduce(
+      (acc: number, item: any) => acc + (item.quantity || 1),
+      0,
+    ) || 0;
   // Get first item image or default
-  const firstItemImage =
-    order.order_items?.[0]?.menu_items?.image_url || "/placeholder.jpg";
-  const firstItemName =
-    order.order_items?.[0]?.menu_items?.name || "Order Items";
+  const firstItemImage = "/placeholder.jpg";
+  const firstItemName = order.items?.[0]?.name || "Order Items";
 
   const statusConfig: Record<
     string,
@@ -142,7 +138,8 @@ export default function ActiveOrderTracker({ userId }: { userId: string }) {
     },
   };
 
-  const currentStatus = statusConfig[order.status] || statusConfig.pending;
+  const currentStatus =
+    statusConfig[order.order_status] || statusConfig.pending;
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#f3f1f1] flex flex-col gap-6 relative overflow-hidden">
@@ -212,7 +209,8 @@ export default function ActiveOrderTracker({ userId }: { userId: string }) {
         <div className="flex justify-between text-xs text-[#806b6b] mt-1 px-1 font-medium">
           <span
             className={
-              order.status === "pending" || order.status === "confirmed"
+              order.order_status === "pending" ||
+              order.order_status === "confirmed"
                 ? "text-[#7b2d2d] font-bold"
                 : ""
             }
@@ -221,14 +219,16 @@ export default function ActiveOrderTracker({ userId }: { userId: string }) {
           </span>
           <span
             className={
-              order.status === "preparing" ? "text-[#7b2d2d] font-bold" : ""
+              order.order_status === "preparing"
+                ? "text-[#7b2d2d] font-bold"
+                : ""
             }
           >
             Cooking
           </span>
           <span
             className={
-              order.status === "ready" ? "text-[#7b2d2d] font-bold" : ""
+              order.order_status === "ready" ? "text-[#7b2d2d] font-bold" : ""
             }
           >
             Ready

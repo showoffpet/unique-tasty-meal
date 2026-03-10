@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Minus, Plus, Trash2, ArrowRight } from "lucide-react";
 import PriceDisplay from "@/components/ui/PriceDisplay";
 import { useCartStore } from "@/store/cartStore";
-import CheckoutAddressSelector from "@/features/delivery-addresses/components/CheckoutAddressSelector";
+import { getImageUrl } from "@/lib/images/cdn-client";
 
 export default function CartClient() {
   const { items, updateQuantity, removeItem, cartTotal } = useCartStore();
@@ -51,7 +51,11 @@ export default function CartClient() {
               {/* Image */}
               <div className="w-full sm:w-32 aspect-square relative rounded-xl overflow-hidden bg-[#f8f6f6] shrink-0">
                 <Image
-                  src={item.image_url}
+                  src={
+                    item.image_url?.startsWith("http")
+                      ? item.image_url
+                      : getImageUrl(item.image_url)
+                  }
                   alt={item.name}
                   fill
                   className="object-cover"
@@ -139,8 +143,6 @@ export default function CartClient() {
 
       {/* Order Summary Sidebar */}
       <div className="w-full lg:w-96 shrink-0 flex flex-col gap-6">
-        <CheckoutAddressSelector />
-
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#f3f1f1] sticky top-24">
           <h2 className="text-xl font-bold text-[#1e1414] mb-6">
             Order Summary

@@ -17,3 +17,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
 }
+
+/* Google Places Autocomplete (new PlaceAutocompleteElement) */
+.place-autocomplete-container {
+  width: 100%;
+}
+
+.place-autocomplete-container gmp-place-autocomplete {
+  width: 100%;
+  --gmpac-color-surface: #ffffff;
+  --gmpac-color-on-surface: #1e1414;
+  --gmpac-color-on-surface-variant: #806b6b;
+  --gmpac-color-outline: #d2d2d2;
+  --gmpac-color-primary: #7a2e2e;
+}

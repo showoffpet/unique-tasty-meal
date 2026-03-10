@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
 import Toggle from "../../../components/ui/Toggle";
-import { usePlacesWidget } from "react-google-autocomplete";
+import {
+  usePlaceAutocomplete,
+  type PlaceResult,
+} from "@/hooks/usePlaceAutocomplete";
 import type { Database } from "@/lib/supabase/database.types";
 
 type AddressRow =
@@ -61,47 +64,25 @@ export default function AddressForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const { ref: placesRef } = usePlacesWidget<HTMLInputElement>({
-    apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
-    // Use any because @types/google.maps is not installed
-    onPlaceSelected: (place: any) => {
-      let street = place.name || "";
-      let city = "";
-      let postal = "";
+  const handlePlaceSelected = useCallback((place: PlaceResult) => {
+    setFormData((prev) => ({
+      ...prev,
+      street_address: place.street_address || place.formatted_address || "",
+      city: place.city || prev.city,
+      postal_code: place.postal_code || prev.postal_code,
+    }));
+    setErrors((prev) => ({
+      ...prev,
+      street_address: undefined,
+      city: undefined,
+      postal_code: undefined,
+    }));
+  }, []);
 
-      place.address_components?.forEach((component: any) => {
-        const types = component.types;
-        if (types.includes("street_number")) {
-          street = `${component.long_name} ${street}`;
-        }
-        if (types.includes("route") && !street.includes(component.long_name)) {
-          street = `${street} ${component.long_name}`.trim();
-        }
-        if (types.includes("locality")) {
-          city = component.long_name;
-        }
-        if (types.includes("postal_code")) {
-          postal = component.long_name;
-        }
-      });
-
-      setFormData((prev) => ({
-        ...prev,
-        street_address: street || place.formatted_address || "",
-        city: city || prev.city,
-        postal_code: postal || prev.postal_code,
-      }));
-      setErrors((prev) => ({
-        ...prev,
-        street_address: undefined,
-        city: undefined,
-        postal_code: undefined,
-      }));
-    },
-    options: {
-      types: ["address"],
-      componentRestrictions: { country: "us" }, // Optional: constrain to your primary delivery country
-    },
+  const { containerRef } = usePlaceAutocomplete({
+    onPlaceSelected: handlePlaceSelected,
+    componentRestrictions: { country: "us" },
+    types: ["address"],
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,18 +115,23 @@ export default function AddressForm({
             placeholder="Home"
           />
 
-          <div className="relative">
-            <Input
-              label="Street Address *"
-              name="street_address"
-              value={formData.street_address}
-              onChange={handleChange}
-              error={errors.street_address}
-              placeholder="123 Main St"
-              required
-              inputRef={placesRef}
-            />
+          {/* Google Places Autocomplete (new PlaceAutocompleteElement) */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-[#1e1414]">
+              Search Address
+            </label>
+            <div ref={containerRef} className="place-autocomplete-container" />
           </div>
+
+          <Input
+            label="Street Address *"
+            name="street_address"
+            value={formData.street_address}
+            onChange={handleChange}
+            error={errors.street_address}
+            placeholder="123 Main St"
+            required
+          />
 
           <Input
             label="Apt, Suite, Bldg (optional)"

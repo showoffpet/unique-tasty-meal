@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${jakarta.variable} font-sans antialiased text-[#1e1414] bg-[#fcfcfc]`}
+        className={`${jakarta.variable} font-sans antialiased text-[#1e1414] bg-[#f8f6f6]`}
       >
         <AuthProvider>
           <Navbar />
