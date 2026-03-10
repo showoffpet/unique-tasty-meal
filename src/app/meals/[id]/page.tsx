@@ -1,7 +1,10 @@
 import React from "react";
 import MealDetailClient from "./MealDetailClient";
 import { notFound } from "next/navigation";
-import { MOCK_MEALS } from "@/lib/mockData";
+import {
+  getMealByIdServer,
+  getSimilarMealsServer,
+} from "@/lib/supabase/queries.server";
 
 export async function generateMetadata({
   params,
@@ -9,7 +12,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const meal = MOCK_MEALS.find((m) => m.id === id);
+  const meal = await getMealByIdServer(id);
 
   if (!meal) return { title: "Meal Not Found — UTM" };
 
@@ -26,30 +29,17 @@ export default async function MealDetailPage({
 }) {
   const { id } = await params;
 
-  // Use mock data for frontend scaffolding until backend schema is finalized
-  const meal = MOCK_MEALS.find((m) => m.id === id);
+  const meal = await getMealByIdServer(id);
 
   if (!meal) {
     notFound();
   }
 
-  // Fetch similar meals based on same category (excluding current)
-  const similarMeals = MOCK_MEALS.filter(
-    (m) => m.category_id === meal.category_id && m.id !== meal.id,
-  ).slice(0, 4);
-
-  // Fallback to random meals if none found in same category
-  const fallbackMeals =
-    similarMeals.length > 0
-      ? similarMeals
-      : MOCK_MEALS.filter((m) => m.id !== meal.id).slice(0, 4);
+  const similarMeals = await getSimilarMealsServer(meal.category_id, meal.id);
 
   return (
     <div className="bg-[#f8f6f6] min-h-screen text-[#161313] pb-24 relative">
-      <MealDetailClient
-        meal={meal as any}
-        similarMeals={fallbackMeals as any}
-      />
+      <MealDetailClient meal={meal as any} similarMeals={similarMeals as any} />
     </div>
   );
 }

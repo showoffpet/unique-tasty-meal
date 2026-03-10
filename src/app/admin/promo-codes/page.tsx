@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SearchBar from "../../../features/search/components/SearchBar";
 import EmptyState from "../../../components/ui/EmptyState";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
@@ -8,75 +8,33 @@ import type { Database } from "@/lib/supabase/database.types";
 import { AdminHeader } from "@/features/admin/components/AdminHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Plus } from "lucide-react";
+import { getPromos, updatePromoStatus, deletePromo } from "@/lib/supabase/queries";
 
 type PromoCode = Database["public"]["Tables"]["promo_codes"]["Row"];
-
-// Mock data
-const MOCK_PROMOS: PromoCode[] = [
-  {
-    id: "p1",
-    code: "WELCOME10",
-    description: "Get 10% off your first order!",
-    discount_type: "percentage",
-    discount_value: 10,
-    minimum_order_amount: 20,
-    max_discount_cap: 15,
-    expires_at: new Date(Date.now() + 86400000 * 30).toISOString(),
-    max_usages: 1,
-    usage_count: 0,
-    status: "active",
-    applicable_cuisines: null,
-    applicable_dietary_tags: null,
-    applicable_meals: null,
-    created_by: "system",
-    excluded_meals: null,
-    metadata: null,
-    requires_minimum_items: null,
-    requires_new_user: true,
-    stackable: false,
-    usage_per_user_limit: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "p2",
-    code: "FREESHIP",
-    description: "Free shipping on orders over $50",
-    discount_type: "fixed",
-    discount_value: 0,
-    minimum_order_amount: 50,
-    max_discount_cap: null,
-    expires_at: new Date(Date.now() - 86400000).toISOString(), // Expired
-    max_usages: 1000,
-    usage_count: 124,
-    status: "inactive",
-    applicable_cuisines: null,
-    applicable_dietary_tags: null,
-    applicable_meals: null,
-    created_by: "system",
-    excluded_meals: null,
-    metadata: null,
-    requires_minimum_items: null,
-    requires_new_user: false,
-    stackable: false,
-    usage_per_user_limit: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
 
 export default function AdminPromoCodesPage() {
   const { user } = useAuth();
   const userName =
     user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Chef";
-  const [promos, setPromos] = useState<PromoCode[]>(MOCK_PROMOS);
+  const [promos, setPromos] = useState<PromoCode[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"all" | "active" | "inactive">(
-    "all",
-  );
-
-  // Modals
+  const [activeTab, setActiveTab] = useState<"all" | "active" | "inactive">("all");
   const [deleteRef, setDeleteRef] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadPromos() {
+      try {
+        const data = await getPromos();
+        setPromos(data);
+      } catch (err) {
+        console.error("Failed to load promos:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadPromos();
+  }, []);
 
   const filteredPromos = promos.filter((p) => {
     const matchesSearch =
@@ -128,14 +86,16 @@ export default function AdminPromoCodesPage() {
     return `$${promo.discount_value.toFixed(2)} OFF`;
   };
 
-  const togglePromoStatus = (id: string, currentStatus: string) => {
-    setPromos((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, status: currentStatus === "active" ? "inactive" : "active" }
-          : p,
-      ),
-    );
+  const togglePromoStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    try {
+      await updatePromoStatus(id, newStatus);
+      setPromos((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
+      );
+    } catch (err) {
+      console.error("Failed to update promo status:", err);
+    }
   };
 
   return (
@@ -269,35 +229,14 @@ export default function AdminPromoCodesPage() {
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             className="p-1.5 text-[#806b6b] hover:text-[#7b2d2d] hover:bg-[#f3f1f1] rounded-lg transition-colors"
-                            onClick={() =>
-                              togglePromoStatus(promo.id, promo.status)
-                            }
-                            title={
-                              promo.status === "active"
-                                ? "Deactivate"
-                                : "Activate"
-                            }
+                            onClick={() => togglePromoStatus(promo.id, promo.status)}
+                            title={promo.status === "active" ? "Deactivate" : "Activate"}
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               {promo.status === "active" ? (
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               ) : (
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               )}
                             </svg>
                           </button>
@@ -306,18 +245,8 @@ export default function AdminPromoCodesPage() {
                             onClick={() => setDeleteRef(promo.id)}
                             title="Delete"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
                         </div>
@@ -338,8 +267,13 @@ export default function AdminPromoCodesPage() {
           message="Are you sure you want to delete this promo code? This action cannot be undone."
           confirmLabel="Delete"
           cancelLabel="Cancel"
-          onConfirm={() => {
-            setPromos(promos.filter((p) => p.id !== deleteRef));
+          onConfirm={async () => {
+            try {
+              await deletePromo(deleteRef);
+              setPromos(promos.filter((p) => p.id !== deleteRef));
+            } catch (err) {
+              console.error("Failed to delete promo:", err);
+            }
             setDeleteRef(null);
           }}
           onCancel={() => setDeleteRef(null)}

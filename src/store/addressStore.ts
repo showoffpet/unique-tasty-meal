@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Database } from "@/lib/supabase/database.types";
+import {
+  getUserAddresses,
+  addUserAddress,
+  updateUserAddress,
+  deleteUserAddress,
+  setDefaultAddress,
+} from "@/lib/supabase/queries";
+import { createClient } from "@/lib/supabase/client";
 
 type AddressRow =
   Database["public"]["Tables"]["user_delivery_addresses"]["Row"];
@@ -21,92 +29,25 @@ interface AddressState {
   setDefaultAddress: (id: string) => Promise<void>;
 }
 
-// Mock initial data based on PRD requirements
-const mockAddresses: AddressRow[] = [
-  {
-    id: "addr_1",
-    user_id: "user_1",
-    label: "Home",
-    street_address: "123 Main St",
-    apartment: "Apt 4B",
-    city: "New York",
-    postal_code: "10001",
-    latitude: 40.7128,
-    longitude: -74.006,
-    delivery_instructions: "Leave at front door",
-    is_default: true,
-    deleted_at: null,
-    delivery_zones: null,
-    formatted_address: "123 Main St, New York, NY 10001, USA",
-    google_places_id: null,
-    is_verified: true,
-    usage_count: 5,
-    verification_status: "verified",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "addr_2",
-    user_id: "user_1",
-    label: "Work",
-    street_address: "456 Market St",
-    apartment: "Suite 200",
-    city: "New York",
-    postal_code: "10004",
-    latitude: 40.7042,
-    longitude: -74.0136,
-    delivery_instructions: "Leave with reception",
-    is_default: false,
-    deleted_at: null,
-    delivery_zones: null,
-    formatted_address: "456 Market St, New York, NY 10004, USA",
-    google_places_id: null,
-    is_verified: true,
-    usage_count: 2,
-    verification_status: "verified",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "addr_3",
-    user_id: "user_1",
-    label: "Other",
-    street_address: "789 Broadway",
-    apartment: null,
-    city: "Brooklyn",
-    postal_code: "11206",
-    latitude: 40.7024,
-    longitude: -73.9441,
-    delivery_instructions: null,
-    is_default: false,
-    deleted_at: null,
-    delivery_zones: null,
-    formatted_address: "789 Broadway, Brooklyn, NY 11206, USA",
-    google_places_id: null,
-    is_verified: true,
-    usage_count: 0,
-    verification_status: "verified",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
 export const useAddressStore = create<AddressState>()(
   persist(
     (set, get) => ({
-      addresses: mockAddresses,
+      addresses: [],
       isLoading: false,
       error: null,
 
       fetchAddresses: async () => {
         set({ isLoading: true, error: null });
         try {
-          // In a real app, fetch from Supabase here
-          // For now, we rely on the persisted mock data or re-initialize it
-          // set({ addresses: data });
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            set({ addresses: [], isLoading: false });
+            return;
+          }
 
-          // Simulation delay
-          await new Promise((resolve) => setTimeout(resolve, 800));
+          const data = await getUserAddresses(user.id);
+          set({ addresses: data });
         } catch (error) {
           const err = error as any;
           set({ error: err.message });
@@ -118,29 +59,18 @@ export const useAddressStore = create<AddressState>()(
       addAddress: async (addressData) => {
         set({ isLoading: true, error: null });
         try {
-          // Simulate API call
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error("Not authenticated");
 
-          const newAddress: AddressRow = {
+          const newAddress = await addUserAddress({
             ...addressData,
-            id: `addr_${Math.random().toString(36).substring(7)}`,
-            user_id: "current_user",
-            latitude: 0,
-            longitude: 0,
-            deleted_at: null,
-            delivery_zones: null,
-            formatted_address: "",
-            google_places_id: null,
-            is_verified: false,
-            usage_count: 0,
-            verification_status: "pending",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
+            user_id: user.id,
+          });
 
           const currentAddresses = get().addresses;
 
-          // If this is the new default, unset others
+          // If this is the new default, unset others locally
           let updatedAddresses = currentAddresses;
           if (newAddress.is_default) {
             updatedAddresses = currentAddresses.map((addr) => ({
@@ -162,7 +92,11 @@ export const useAddressStore = create<AddressState>()(
       updateAddress: async (id, updates) => {
         set({ isLoading: true, error: null });
         try {
-          await new Promise((resolve) => setTimeout(resolve, 800));
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error("Not authenticated");
+
+          await updateUserAddress(id, { ...updates, user_id: user.id });
 
           const currentAddresses = get().addresses;
           let updatedAddresses = currentAddresses;
@@ -193,7 +127,7 @@ export const useAddressStore = create<AddressState>()(
       deleteAddress: async (id) => {
         set({ isLoading: true, error: null });
         try {
-          await new Promise((resolve) => setTimeout(resolve, 600));
+          await deleteUserAddress(id);
           set({ addresses: get().addresses.filter((addr) => addr.id !== id) });
         } catch (error) {
           const err = error as any;
@@ -207,7 +141,11 @@ export const useAddressStore = create<AddressState>()(
       setDefaultAddress: async (id) => {
         set({ isLoading: true, error: null });
         try {
-          await new Promise((resolve) => setTimeout(resolve, 400));
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error("Not authenticated");
+
+          await setDefaultAddress(user.id, id);
           set({
             addresses: get().addresses.map((addr) => ({
               ...addr,

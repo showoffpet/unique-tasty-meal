@@ -28,7 +28,7 @@ export default function AddressFormModal({
       isOpen={isOpen}
       onClose={onClose}
       title={initialData?.id ? "Edit Delivery Address" : "Add Delivery Address"}
-      maxWidth="max-w-xl"
+      maxWidth="xl"
     >
       <div className="p-1">
         <AddressForm

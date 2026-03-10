@@ -1,80 +1,40 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
 import SearchBar from "../../features/search/components/SearchBar";
 import type { Database } from "@/lib/supabase/database.types";
+import { getActivePromos } from "@/lib/supabase/queries";
 
 type PromoCode = Database["public"]["Tables"]["promo_codes"]["Row"];
 
-// Mock data matching exact DB structure
-const MOCK_PROMOS: PromoCode[] = [
-  {
-    id: "p1",
-    code: "WELCOME10",
-    description: "Get 10% off your first order!",
-    discount_type: "percentage",
-    discount_value: 10,
-    minimum_order_amount: 20,
-    max_discount_cap: 15,
-    expires_at: new Date(Date.now() + 86400000 * 30).toISOString(),
-    max_usages: 1,
-    usage_count: 0,
-    status: "active",
-    applicable_cuisines: null,
-    applicable_dietary_tags: null,
-    applicable_meals: null,
-    created_by: "system",
-    excluded_meals: null,
-    metadata: null,
-    requires_minimum_items: null,
-    requires_new_user: true,
-    stackable: false,
-    usage_per_user_limit: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "p2",
-    code: "FREESHIP",
-    description: "Free shipping on orders over $50",
-    discount_type: "fixed",
-    discount_value: 0,
-    minimum_order_amount: 50,
-    max_discount_cap: null,
-    expires_at: new Date(Date.now() + 86400000 * 7).toISOString(),
-    max_usages: 1000,
-    usage_count: 124,
-    status: "active",
-    applicable_cuisines: null,
-    applicable_dietary_tags: null,
-    applicable_meals: null,
-    created_by: "system",
-    excluded_meals: null,
-    metadata: null,
-    requires_minimum_items: null,
-    requires_new_user: false,
-    stackable: false,
-    usage_per_user_limit: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
 export default function PromoCodesPage() {
-  const [promos] = useState<PromoCode[]>(MOCK_PROMOS);
+  const [promos, setPromos] = useState<PromoCode[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const filteredPromos = promos
-    .filter(
-      (p) =>
-        p.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.description &&
-          p.description.toLowerCase().includes(searchQuery.toLowerCase())),
-    )
-    .filter((p) => p.status === "active");
+  useEffect(() => {
+    async function loadPromos() {
+      try {
+        const data = await getActivePromos();
+        setPromos(data);
+      } catch (err) {
+        console.error("Failed to load promos:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadPromos();
+  }, []);
+
+  const filteredPromos = promos.filter(
+    (p) =>
+      p.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.description &&
+        p.description.toLowerCase().includes(searchQuery.toLowerCase())),
+  );
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -117,7 +77,13 @@ export default function PromoCodesPage() {
         </div>
 
         {/* Promos Grid */}
-        {filteredPromos.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-[#f3f1f1] h-64 animate-pulse" />
+            ))}
+          </div>
+        ) : filteredPromos.length === 0 ? (
           <EmptyState
             title={
               searchQuery
@@ -145,7 +111,6 @@ export default function PromoCodesPage() {
                 >
                   {/* Top: Discount Value */}
                   <div className="bg-[#fcfcfc] border-b border-[#f3f1f1] p-6 text-center relative overflow-hidden">
-                    {/* Decorative pattern */}
                     <div className="absolute top-0 right-0 -mr-8 -mt-8 w-24 h-24 rounded-full border-[12px] border-[#7A2E2E]/5"></div>
                     <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-20 h-20 rounded-full border-[8px] border-[#ED8B00]/10"></div>
 

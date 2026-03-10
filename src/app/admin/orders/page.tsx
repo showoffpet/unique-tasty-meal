@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -10,84 +10,70 @@ import {
   Box,
 } from "lucide-react";
 import { AdminHeader } from "@/features/admin/components/AdminHeader";
-
-// Mock Data for 48h Batch Workflow
-const BATCH_ORDERS = [
-  {
-    id: "ORD-1204",
-    customer: "Sarah K.",
-    meals: 3,
-    total: 45.5,
-    due: "Tomorrow, 5:00 PM",
-    stage: "new",
-  },
-  {
-    id: "ORD-1205",
-    customer: "Mike T.",
-    meals: 1,
-    total: 18.0,
-    due: "Today, 6:30 PM",
-    stage: "new",
-  },
-  {
-    id: "ORD-1201",
-    customer: "Emma W.",
-    meals: 5,
-    total: 82.5,
-    due: "Tomorrow, 5:00 PM",
-    stage: "confirmed",
-  },
-  {
-    id: "ORD-1198",
-    customer: "John D.",
-    meals: 2,
-    total: 34.0,
-    due: "Today, 5:00 PM",
-    stage: "prepping",
-  },
-  {
-    id: "ORD-1195",
-    customer: "Alice M.",
-    meals: 4,
-    total: 65.0,
-    due: "Today, 12:00 PM",
-    stage: "ready",
-  },
-];
+import { getOrders } from "@/lib/supabase/queries";
 
 const STAGES = [
-  {
-    id: "new",
-    label: "New",
-    count: 2,
-    color: "bg-blue-50 text-blue-700 border-blue-100",
-  },
-  {
-    id: "confirmed",
-    label: "Confirmed",
-    count: 1,
-    color: "bg-purple-50 text-purple-700 border-purple-100",
-  },
-  {
-    id: "prepping",
-    label: "Prepping",
-    count: 1,
-    color: "bg-orange-50 text-orange-700 border-orange-100",
-  },
-  {
-    id: "ready",
-    label: "Ready",
-    count: 1,
-    color: "bg-green-50 text-green-700 border-green-100",
-  },
+  { id: "new", label: "New", color: "bg-blue-50 text-blue-700 border-blue-100" },
+  { id: "confirmed", label: "Confirmed", color: "bg-purple-50 text-purple-700 border-purple-100" },
+  { id: "prepping", label: "Prepping", color: "bg-orange-50 text-orange-700 border-orange-100" },
+  { id: "ready", label: "Ready", color: "bg-green-50 text-green-700 border-green-100" },
 ];
+
+interface OrderDisplay {
+  id: string;
+  customer: string;
+  meals: number;
+  total: number;
+  due: string;
+  stage: string;
+}
 
 export default function BatchOrderQueuePage() {
   const [activeStage, setActiveStage] = useState("new");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [orders, setOrders] = useState<OrderDisplay[]>([]);
+  const [stageCounts, setStageCounts] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredOrders = BATCH_ORDERS.filter(
+  useEffect(() => {
+    async function loadOrders() {
+      try {
+        const data = await getOrders();
+        const mapped: OrderDisplay[] = data.map((o) => {
+          const items = o.items as any[];
+          const mealCount = Array.isArray(items) ? items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) : 0;
+          const createdAt = new Date(o.created_at);
+          const timeAgo = getTimeAgo(createdAt);
+
+          return {
+            id: o.id.slice(0, 8).toUpperCase(),
+            customer: o.users?.name || "Unknown",
+            meals: mealCount,
+            total: Number(o.total),
+            due: timeAgo,
+            stage: o.order_status,
+          };
+        });
+
+        setOrders(mapped);
+
+        // Count per stage
+        const counts: Record<string, number> = {};
+        for (const order of mapped) {
+          counts[order.stage] = (counts[order.stage] || 0) + 1;
+        }
+        setStageCounts(counts);
+      } catch (err) {
+        console.error("Failed to load orders:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadOrders();
+  }, []);
+
+  const filteredOrders = orders.filter(
     (o) =>
       o.stage === activeStage &&
       (o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -104,16 +90,11 @@ export default function BatchOrderQueuePage() {
 
   const getActionForStage = (stage: string) => {
     switch (stage) {
-      case "new":
-        return "Confirm Selected";
-      case "confirmed":
-        return "Start Prepping";
-      case "prepping":
-        return "Mark as Ready";
-      case "ready":
-        return "Mark Completed";
-      default:
-        return "Action";
+      case "new": return "Confirm Selected";
+      case "confirmed": return "Start Prepping";
+      case "prepping": return "Mark as Ready";
+      case "ready": return "Mark Completed";
+      default: return "Action";
     }
   };
 
@@ -152,7 +133,7 @@ export default function BatchOrderQueuePage() {
               <span
                 className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold border ${activeStage === stage.id ? "bg-[#7b2d2d] text-white border-[#7b2d2d]" : "bg-white text-[#806b6b] border-[#e5e5e5]"}`}
               >
-                {stage.count}
+                {stageCounts[stage.id] || 0}
               </span>
             </button>
           ))}
@@ -186,7 +167,12 @@ export default function BatchOrderQueuePage() {
 
         {/* Orders Table */}
         <div className="bg-white rounded-xl border border-[#f3f1f1] shadow-sm overflow-hidden mb-10">
-          {filteredOrders.length > 0 ? (
+          {isLoading ? (
+            <div className="p-20 text-center text-[#806b6b]">
+              <div className="w-6 h-6 border-2 border-[#7A2E2E] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-sm">Loading orders...</p>
+            </div>
+          ) : filteredOrders.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -196,10 +182,7 @@ export default function BatchOrderQueuePage() {
                         type="checkbox"
                         className="w-4 h-4 rounded border-[#f3f1f1] text-[#7b2d2d] focus:ring-[#7b2d2d]"
                         onChange={handleSelectAll}
-                        checked={
-                          filteredOrders.length > 0 &&
-                          selectedOrders.length === filteredOrders.length
-                        }
+                        checked={filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length}
                       />
                     </th>
                     <th className="p-4 font-medium">Order Details</th>
@@ -221,32 +204,22 @@ export default function BatchOrderQueuePage() {
                           className="w-4 h-4 rounded border-[#f3f1f1] text-[#7b2d2d] focus:ring-[#7b2d2d]"
                           checked={selectedOrders.includes(order.id)}
                           onChange={(e) => {
-                            if (e.target.checked)
-                              setSelectedOrders([...selectedOrders, order.id]);
-                            else
-                              setSelectedOrders(
-                                selectedOrders.filter((id) => id !== order.id),
-                              );
+                            if (e.target.checked) setSelectedOrders([...selectedOrders, order.id]);
+                            else setSelectedOrders(selectedOrders.filter((id) => id !== order.id));
                           }}
                         />
                       </td>
                       <td className="p-4">
                         <div>
                           <p className="font-bold">{order.id}</p>
-                          <p className="text-xs text-[#806b6b] font-medium">
-                            {order.customer}
-                          </p>
+                          <p className="text-xs text-[#806b6b] font-medium">{order.customer}</p>
                         </div>
                       </td>
                       <td className="p-4 text-center">
-                        <span className="font-bold text-[#7b2d2d]">
-                          {order.meals}
-                        </span>
+                        <span className="font-bold text-[#7b2d2d]">{order.meals}</span>
                       </td>
                       <td className="p-4 text-right">
-                        <span className="font-bold">
-                          ${order.total.toFixed(2)}
-                        </span>
+                        <span className="font-bold">${order.total.toFixed(2)}</span>
                       </td>
                       <td className="p-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5 text-xs font-medium">
@@ -278,4 +251,16 @@ export default function BatchOrderQueuePage() {
       </main>
     </div>
   );
+}
+
+function getTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 60) return `${diffMins} mins ago`;
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  return `${diffDays} days ago`;
 }

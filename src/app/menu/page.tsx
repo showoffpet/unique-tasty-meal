@@ -8,14 +8,19 @@ import EmptyState from "../../components/ui/EmptyState";
 import Skeleton from "../../components/ui/Skeleton";
 import Button from "../../components/ui/Button";
 import type { Database } from "@/lib/supabase/database.types";
+import { getCategories, getMeals } from "@/lib/supabase/queries";
 
-import { MOCK_CATEGORIES, MOCK_MEALS } from "@/lib/mockData";
+type MealRow = Database["public"]["Tables"]["meals"]["Row"];
+type CategoryRow = Database["public"]["Tables"]["meal_categories"]["Row"];
 
 export default function MenuDisplayPage() {
   const [activeCategoryId, setActiveCategoryId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isRestaurantClosed, setIsRestaurantClosed] = useState(false);
+
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
+  const [allMeals, setAllMeals] = useState<MealRow[]>([]);
 
   // Cart state simulation
   const [cartItemCount, setCartItemCount] = useState(0);
@@ -26,13 +31,21 @@ export default function MenuDisplayPage() {
   const observerTargetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Simulate initial data loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      // Simulate closed randomly for testing
-      // setIsRestaurantClosed(Math.random() > 0.8);
-    }, 1500);
-    return () => clearTimeout(timer);
+    async function loadData() {
+      try {
+        const [cats, meals] = await Promise.all([
+          getCategories(),
+          getMeals(),
+        ]);
+        setCategories(cats);
+        setAllMeals(meals);
+      } catch (err) {
+        console.error("Failed to load menu data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
   }, []);
 
   const handleSearch = (query: string) => {
@@ -45,7 +58,7 @@ export default function MenuDisplayPage() {
   };
 
   const handleAddToCart = (mealId: string) => {
-    const meal = MOCK_MEALS.find((m) => m.id === mealId);
+    const meal = allMeals.find((m) => m.id === mealId);
     if (meal) {
       setCartItemCount((prev) => prev + 1);
       setCartTotal((prev) => prev + meal.base_price);
@@ -53,7 +66,7 @@ export default function MenuDisplayPage() {
   };
 
   // Filter meals based on search OR category
-  const filteredMeals = MOCK_MEALS.filter((meal) => {
+  const filteredMeals = allMeals.filter((meal) => {
     if (searchQuery) {
       return (
         meal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -135,7 +148,7 @@ export default function MenuDisplayPage() {
                     <CategoryTabs
                       tabs={[
                         { id: "all", label: "All Menu" },
-                        ...MOCK_CATEGORIES.map((c) => ({
+                        ...categories.map((c) => ({
                           id: c.id,
                           label: c.name,
                         })),

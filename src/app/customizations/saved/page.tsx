@@ -1,48 +1,49 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SavedPresetCard, {
   SavedPreset,
 } from "../../../features/customizations/components/SavedPresetCard";
 import EmptyState from "../../../components/ui/EmptyState";
 import Button from "../../../components/ui/Button";
-
-// Mock Data
-const MOCK_PRESETS: SavedPreset[] = [
-  {
-    id: "preset-1",
-    name: "My Spicy Chicken",
-    meal_name: "Grilled Chicken Salad",
-    spice_level: "Medium",
-    add_ons: [
-      { id: "a1", name: "Avocado" },
-      { id: "a2", name: "Extra Dressing" },
-    ],
-    is_favorite: true,
-  },
-  {
-    id: "preset-2",
-    name: "Classic Burger Combo",
-    meal_name: "Wagyu Beef Burger",
-    remove_ingredients: [
-      { id: "r1", name: "Pickles" },
-      { id: "r2", name: "Onions" },
-    ],
-    portion_size: "Large",
-    is_favorite: false,
-  },
-  {
-    id: "preset-3",
-    name: "Post-Workout Meal",
-    meal_name: "Quinoa Bowl with Salmon",
-    add_ons: [{ id: "a3", name: "Extra Protein" }],
-    is_favorite: true,
-  },
-];
+import { getSavedPresets, deletePreset, togglePresetFavorite } from "@/lib/supabase/queries";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SavedCustomizationsPage() {
-  const [presets, setPresets] = useState<SavedPreset[]>(MOCK_PRESETS);
+  const [presets, setPresets] = useState<SavedPreset[]>([]);
   const [filter, setFilter] = useState<"all" | "favorites">("all");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPresets() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await getSavedPresets(user.id);
+        const mapped: SavedPreset[] = data.map((p) => ({
+          id: p.id,
+          name: p.name,
+          meal_name: p.meals?.name || "Unknown Meal",
+          spice_level: p.spice_level > 0 ? ["Mild", "Medium", "Hot", "Extra Hot"][p.spice_level - 1] || "Medium" : undefined,
+          portion_size: p.portion_size !== "regular" ? p.portion_size.charAt(0).toUpperCase() + p.portion_size.slice(1) : undefined,
+          add_ons: p.add_ons ? Object.entries(p.add_ons as Record<string, number>).map(([name], i) => ({ id: `a${i}`, name })) : undefined,
+          remove_ingredients: p.removed_ingredients ? p.removed_ingredients.map((name, i) => ({ id: `r${i}`, name })) : undefined,
+          is_favorite: p.is_favorite ?? false,
+        }));
+        setPresets(mapped);
+      } catch (err) {
+        console.error("Failed to load presets:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadPresets();
+  }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleApply = (id: string) => {
@@ -54,18 +55,40 @@ export default function SavedCustomizationsPage() {
     // TODO: Open CustomizationModal with this preset loaded
   };
 
-  const handleDelete = (id: string) => {
-    setPresets((prev) => prev.filter((p) => p.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePreset(id);
+      setPresets((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("Failed to delete preset:", err);
+    }
   };
 
-  const handleToggleFavorite = (id: string, isFav: boolean) => {
-    setPresets((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, is_favorite: isFav } : p)),
-    );
+  const handleToggleFavorite = async (id: string, isFav: boolean) => {
+    try {
+      await togglePresetFavorite(id, isFav);
+      setPresets((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, is_favorite: isFav } : p)),
+      );
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err);
+    }
   };
 
   const displayedPresets =
     filter === "favorites" ? presets.filter((p) => p.is_favorite) : presets;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#fcfcfc] pb-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+          <div className="flex items-center justify-center h-64">
+            <div className="w-6 h-6 border-2 border-[#7A2E2E] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fcfcfc] pb-24">

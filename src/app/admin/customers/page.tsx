@@ -1,57 +1,41 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Mail, Phone, Calendar, ArrowUpRight } from "lucide-react";
 import { AdminHeader } from "@/features/admin/components/AdminHeader";
+import { getCustomers } from "@/lib/supabase/queries";
 
-const MOCK_CUSTOMERS = [
-  {
-    id: "1",
-    name: "Sarah Jenkins",
-    email: "sarah.j@example.com",
-    phone: "+234 810 123 4567",
-    totalOrders: 12,
-    totalSpent: "$540.00",
-    lastOrder: "2 days ago",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Michael Oluchi",
-    email: "m.oluchi@yahoo.com",
-    phone: "+234 703 987 6543",
-    totalOrders: 8,
-    totalSpent: "$320.50",
-    lastOrder: "5 days ago",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Anita Bello",
-    email: "anita.bello@gmail.com",
-    phone: "+234 905 555 1212",
-    totalOrders: 25,
-    totalSpent: "$1,120.00",
-    lastOrder: "Yesterday",
-    status: "loyal",
-  },
-  {
-    id: "4",
-    name: "David Chen",
-    email: "d.chen@hotmail.com",
-    phone: "+234 812 333 4444",
-    totalOrders: 3,
-    totalSpent: "$85.00",
-    lastOrder: "2 weeks ago",
-    status: "inactive",
-  },
-];
+interface CustomerDisplay {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrder: string | null;
+  status: string;
+}
 
 export default function AdminCustomersPage() {
-  // No user hook needed here
   const [searchQuery, setSearchQuery] = useState("");
+  const [customers, setCustomers] = useState<CustomerDisplay[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredCustomers = MOCK_CUSTOMERS.filter(
+  useEffect(() => {
+    async function loadCustomers() {
+      try {
+        const data = await getCustomers();
+        setCustomers(data);
+      } catch (err) {
+        console.error("Failed to load customers:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadCustomers();
+  }, []);
+
+  const filteredCustomers = customers.filter(
     (c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.email.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -68,6 +52,23 @@ export default function AdminCustomersPage() {
       default:
         return "bg-gray-50 text-gray-700 border-gray-100";
     }
+  };
+
+  const formatSpent = (amount: number) => {
+    return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const formatLastActive = (date: string | null) => {
+    if (!date) return "Never";
+    const d = new Date(date);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return d.toLocaleDateString();
   };
 
   return (
@@ -109,7 +110,13 @@ export default function AdminCustomersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f3f1f1] text-sm text-[#1e1414]">
-                {filteredCustomers.length > 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="p-12 text-center text-[#806b6b]">
+                      Loading customers...
+                    </td>
+                  </tr>
+                ) : filteredCustomers.length > 0 ? (
                   filteredCustomers.map((customer) => (
                     <tr
                       key={customer.id}
@@ -123,7 +130,7 @@ export default function AdminCustomersPage() {
                           <div>
                             <p className="font-bold">{customer.name}</p>
                             <p className="text-xs text-[#806b6b]">
-                              ID: {customer.id}
+                              ID: {customer.id.slice(0, 8)}
                             </p>
                           </div>
                         </div>
@@ -136,29 +143,25 @@ export default function AdminCustomersPage() {
                           </div>
                           <div className="flex items-center gap-2 text-xs text-[#806b6b]">
                             <Phone className="w-3 h-3" />
-                            {customer.phone}
+                            {customer.phone || "N/A"}
                           </div>
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="font-semibold">
-                          {customer.totalOrders}
-                        </span>
+                        <span className="font-semibold">{customer.totalOrders}</span>
                       </td>
                       <td className="p-4">
-                        <span className="font-bold">{customer.totalSpent}</span>
+                        <span className="font-bold">{formatSpent(customer.totalSpent)}</span>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2 text-xs text-[#806b6b]">
                           <Calendar className="w-3 h-3" />
-                          {customer.lastOrder}
+                          {formatLastActive(customer.lastOrder)}
                         </div>
                       </td>
                       <td className="p-4">
                         <span
-                          className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${getStatusStyle(
-                            customer.status,
-                          )}`}
+                          className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${getStatusStyle(customer.status)}`}
                         >
                           {customer.status}
                         </span>
