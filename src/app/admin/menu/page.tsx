@@ -44,7 +44,9 @@ export default function MenuManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [deleteCategoryRef, setDeleteCategoryRef] = useState<string | null>(null);
+  const [deleteCategoryRef, setDeleteCategoryRef] = useState<string | null>(
+    null,
+  );
   const [deleteMealRef, setDeleteMealRef] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,11 +69,16 @@ export default function MenuManagementPage() {
   }, []);
 
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
-  const filteredMeals = meals.filter((m) =>
-    m.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredMeals = meals.filter(
+    (m) =>
+      m.category_id === selectedCategoryId &&
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleDragEnd = async (result: DropResult, type: "category" | "meal") => {
+  const handleDragEnd = async (
+    result: DropResult,
+    type: "category" | "meal",
+  ) => {
     if (!result.destination) return;
 
     if (type === "category") {
@@ -80,7 +87,9 @@ export default function MenuManagementPage() {
       items.splice(result.destination.index, 0, reorderedItem);
       setCategories(items);
       try {
-        await updateCategoryOrder(items.map((c, i) => ({ id: c.id, display_order: i })));
+        await updateCategoryOrder(
+          items.map((c, i) => ({ id: c.id, display_order: i })),
+        );
       } catch (err) {
         console.error("Failed to update category order:", err);
       }
@@ -91,7 +100,9 @@ export default function MenuManagementPage() {
       if (!searchQuery) {
         setMeals(items);
         try {
-          await updateMealOrder(items.map((m, i) => ({ id: m.id, display_order: i })));
+          await updateMealOrder(
+            items.map((m, i) => ({ id: m.id, display_order: i })),
+          );
         } catch (err) {
           console.error("Failed to update meal order:", err);
         }
@@ -181,20 +192,36 @@ export default function MenuManagementPage() {
                                   {...provided.dragHandleProps}
                                   className="px-3 text-[#999999] hover:text-[#806b6b] cursor-grab active:cursor-grabbing"
                                 >
-                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M4 8h16M4 16h16"
+                                    />
                                   </svg>
                                 </div>
 
                                 <button
                                   className="flex-1 py-4 pr-4 text-left flex justify-between items-center"
-                                  onClick={() => setSelectedCategoryId(category.id)}
+                                  onClick={() =>
+                                    setSelectedCategoryId(category.id)
+                                  }
                                 >
-                                  <span className={`text-sm font-bold ${selectedCategoryId === category.id ? "text-[#7b2d2d]" : "text-[#1e1414]"}`}>
+                                  <span
+                                    className={`text-sm font-bold ${selectedCategoryId === category.id ? "text-[#7b2d2d]" : "text-[#1e1414]"}`}
+                                  >
                                     {category.name}
                                   </span>
                                   {category.meal_count > 0 && (
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${selectedCategoryId === category.id ? "bg-[#7b2d2d] text-white" : "bg-[#f3f1f1] text-[#806b6b]"}`}>
+                                    <span
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${selectedCategoryId === category.id ? "bg-[#7b2d2d] text-white" : "bg-[#f3f1f1] text-[#806b6b]"}`}
+                                    >
                                       {category.meal_count}
                                     </span>
                                   )}
@@ -202,10 +229,23 @@ export default function MenuManagementPage() {
 
                                 <button
                                   className="pr-4 text-[#999999] hover:text-[#7b2d2d] opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => { e.stopPropagation(); setDeleteCategoryRef(category.id); }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteCategoryRef(category.id);
+                                  }}
                                 >
-                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
                                   </svg>
                                 </button>
                               </li>
@@ -220,7 +260,9 @@ export default function MenuManagementPage() {
               )}
 
               {!isLoading && categories.length === 0 && !isAddingCategory && (
-                <div className="p-8 text-center text-[#806b6b] text-sm">No categories yet.</div>
+                <div className="p-8 text-center text-[#806b6b] text-sm">
+                  No categories yet.
+                </div>
               )}
             </div>
           </div>
@@ -228,14 +270,24 @@ export default function MenuManagementPage() {
           <div className="flex-1 flex flex-col gap-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-[#f3f1f1] shadow-sm">
               <div>
-                <h2 className="text-xl font-bold text-[#1e1414]">{selectedCategory?.name || "Select a Category"}</h2>
-                <p className="text-sm text-[#806b6b] mt-1">{selectedCategory?.meal_count || 0} meals in this category</p>
+                <h2 className="text-xl font-bold text-[#1e1414]">
+                  {selectedCategory?.name || "Select a Category"}
+                </h2>
+                <p className="text-sm text-[#806b6b] mt-1">
+                  {selectedCategory?.meal_count || 0} meals in this category
+                </p>
               </div>
               <div className="flex items-center gap-4 w-full sm:w-auto">
                 <div className="w-full sm:w-64">
-                  <SearchBar onSearch={setSearchQuery} placeholder="Search meals..." />
+                  <SearchBar
+                    onSearch={setSearchQuery}
+                    placeholder="Search meals..."
+                  />
                 </div>
-                <button onClick={() => {}} className="flex-shrink-0 px-4 py-2 bg-[#7b2d2d] text-white text-sm font-bold rounded-lg hover:bg-[#561b1b] transition-colors shadow-sm">
+                <button
+                  onClick={() => {}}
+                  className="flex-shrink-0 px-4 py-2 bg-[#7b2d2d] text-white text-sm font-bold rounded-lg hover:bg-[#561b1b] transition-colors shadow-sm"
+                >
                   Add Meal
                 </button>
               </div>
@@ -244,7 +296,10 @@ export default function MenuManagementPage() {
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white h-64 rounded-xl border border-[#f3f1f1] p-4">
+                  <div
+                    key={i}
+                    className="bg-white h-64 rounded-xl border border-[#f3f1f1] p-4"
+                  >
                     <Skeleton className="w-full h-32 rounded-lg mb-4" />
                     <Skeleton className="h-6 w-3/4 mb-2" />
                     <Skeleton className="h-4 w-1/2" />
@@ -253,52 +308,129 @@ export default function MenuManagementPage() {
               </div>
             ) : filteredMeals.length === 0 ? (
               <EmptyState
-                title={searchQuery ? "No meals match search" : "No meals in this category"}
-                message={searchQuery ? "Try a different search term." : "Get started by adding your first meal."}
+                title={
+                  searchQuery
+                    ? "No meals match search"
+                    : "No meals in this category"
+                }
+                message={
+                  searchQuery
+                    ? "Try a different search term."
+                    : "Get started by adding your first meal."
+                }
                 actionLabel={searchQuery ? "Clear Search" : "Add Meal"}
                 onAction={searchQuery ? () => setSearchQuery("") : () => {}}
               />
             ) : (
-              <DragDropContext onDragEnd={(result: DropResult) => handleDragEnd(result, "meal")}>
+              <DragDropContext
+                onDragEnd={(result: DropResult) =>
+                  handleDragEnd(result, "meal")
+                }
+              >
                 <Droppable droppableId="meals" direction="vertical">
                   {(provided: DroppableProvided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                    >
                       {filteredMeals.map((meal, index) => (
-                        <Draggable key={meal.id} draggableId={meal.id} index={index} isDragDisabled={!!searchQuery}>
-                          {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
+                        <Draggable
+                          key={meal.id}
+                          draggableId={meal.id}
+                          index={index}
+                          isDragDisabled={!!searchQuery}
+                        >
+                          {(
+                            provided: DraggableProvided,
+                            snapshot: DraggableStateSnapshot,
+                          ) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               className={`bg-white rounded-xl border transition-all group overflow-hidden ${snapshot.isDragging ? "border-[#7b2d2d] shadow-xl z-50 ring-2 ring-[#7b2d2d]/20" : "border-[#f3f1f1] hover:shadow-md hover:border-[#CCCCCC]"}`}
                             >
                               <div className="relative h-40 bg-[#f3f1f1]">
-                                <Image src={meal.image_url || "https://picsum.photos/400/300"} alt={meal.name} fill className="object-cover" />
+                                <Image
+                                  src={
+                                    meal.image_url ||
+                                    "https://picsum.photos/400/300"
+                                  }
+                                  alt={meal.name}
+                                  fill
+                                  className="object-cover"
+                                />
                                 {!searchQuery && (
-                                  <div {...provided.dragHandleProps} className="absolute top-2 left-2 bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white p-1.5 rounded-lg cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                                  <div
+                                    {...provided.dragHandleProps}
+                                    className="absolute top-2 left-2 bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white p-1.5 rounded-lg cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M4 8h16M4 16h16"
+                                      />
                                     </svg>
                                   </div>
                                 )}
                                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button className="bg-white/90 hover:bg-white text-[#1e1414] p-1.5 rounded-lg shadow-sm" onClick={() => {}}>
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  <button
+                                    className="bg-white/90 hover:bg-white text-[#1e1414] p-1.5 rounded-lg shadow-sm"
+                                    onClick={() => {}}
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                      />
                                     </svg>
                                   </button>
-                                  <button className="bg-white/90 hover:bg-[#7b2d2d] hover:text-white text-[#7b2d2d] p-1.5 rounded-lg shadow-sm transition-colors" onClick={() => setDeleteMealRef(meal.id)}>
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  <button
+                                    className="bg-white/90 hover:bg-[#7b2d2d] hover:text-white text-[#7b2d2d] p-1.5 rounded-lg shadow-sm transition-colors"
+                                    onClick={() => setDeleteMealRef(meal.id)}
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
                                     </svg>
                                   </button>
                                 </div>
                               </div>
                               <div className="p-4">
                                 <div className="flex justify-between items-start mb-2">
-                                  <h3 className="font-bold text-[#1e1414] line-clamp-1 flex-1 pr-2">{meal.name}</h3>
-                                  <span className="font-semibold text-[#1e1414]">${meal.base_price.toFixed(2)}</span>
+                                  <h3 className="font-bold text-[#1e1414] line-clamp-1 flex-1 pr-2">
+                                    {meal.name}
+                                  </h3>
+                                  <span className="font-semibold text-[#1e1414]">
+                                    ${meal.base_price.toFixed(2)}
+                                  </span>
                                 </div>
-                                <p className="text-sm text-[#806b6b] line-clamp-2">{meal.description}</p>
+                                <p className="text-sm text-[#806b6b] line-clamp-2">
+                                  {meal.description}
+                                </p>
                               </div>
                             </div>
                           )}
@@ -324,7 +456,9 @@ export default function MenuManagementPage() {
           onConfirm={async () => {
             try {
               await deleteCategoryApi(deleteCategoryRef);
-              setCategories(categories.filter((c) => c.id !== deleteCategoryRef));
+              setCategories(
+                categories.filter((c) => c.id !== deleteCategoryRef),
+              );
             } catch (err) {
               console.error("Failed to delete category:", err);
             }
