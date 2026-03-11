@@ -39,6 +39,7 @@
     "html2canvas": "^1.4.1",
     "image_picker": "^1.0.0",
     "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
     "libphonenumber-js": "^1.12.38",
     "lucide-react": "^0.577.0",
     "mapbox-gl": "^3.19.0",

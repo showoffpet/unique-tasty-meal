@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import {
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export default function CheckoutConfirmationPage() {
+function CheckoutConfirmationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = searchParams.get("order_id");
@@ -138,5 +138,13 @@ export default function CheckoutConfirmationPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutConfirmationPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center p-12 text-[#806b6b]">Loading confirmation...</div>}>
+      <CheckoutConfirmationContent />
+    </Suspense>
   );
 }

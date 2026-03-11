@@ -21,7 +21,7 @@ export default function AuthCard({
   footerLinkHref,
 }: AuthCardProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="text-center lg:text-left">
         <h1 className="text-2xl font-bold text-[#1e1414] tracking-tight">
@@ -31,7 +31,7 @@ export default function AuthCard({
       </div>
 
       {/* Form Content */}
-      <div className="bg-white rounded-2xl shadow-md border border-[#f3f1f1] p-6 sm:p-8 space-y-6">
+      <div className="bg-white rounded-2xl shadow-md border border-[#f3f1f1] p-6 sm:p-7 space-y-5">
         {children}
       </div>
 

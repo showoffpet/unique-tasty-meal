@@ -92,7 +92,7 @@ export default function ForgotPasswordPage() {
       footerLinkText="Back to sign in"
       footerLinkHref="/login"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <Input
           label="Email Address"
           type="email"

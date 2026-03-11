@@ -86,7 +86,7 @@ export default function RegisterPage() {
       footerLinkText="Sign in"
       footerLinkHref="/login"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <Input
           label="Full Name"
           type="text"

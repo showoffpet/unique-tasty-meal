@@ -76,7 +76,7 @@ export default function LoginPage() {
       footerLinkText="Create one"
       footerLinkHref="/register"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <Input
           label="Email Address"
           type="email"

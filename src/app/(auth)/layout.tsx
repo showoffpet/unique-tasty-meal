@@ -7,7 +7,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-[calc(100vh-80px)] flex flex-col lg:flex-row overflow-hidden">
       {/* Left Side — Hero Image */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <Image
@@ -32,7 +32,7 @@ export default function AuthLayout({
       </div>
 
       {/* Right Side — Form */}
-      <div className="flex-1 flex items-center justify-center bg-[#F8F8F8] px-6 py-12 lg:py-0">
+      <div className="flex-1 flex items-center justify-center bg-[#F8F8F8] px-6 py-8 lg:py-0">
         <div className="w-full max-w-md">
           {/* Mobile Hero */}
           <div className="lg:hidden relative w-full h-48 rounded-2xl overflow-hidden mb-8 shadow-lg">

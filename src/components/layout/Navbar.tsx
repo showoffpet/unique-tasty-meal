@@ -73,10 +73,10 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${
         isScrolled
-          ? "bg-gradient-to-r from-[#ffffff]/90 via-[#fcf0f0]/90 to-[#ffffff]/90 backdrop-blur-md py-3 shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-b border-[#f3f1f1]/50"
-          : "bg-gradient-to-b from-[#ead3d3]/90 via-[#ead3d3]/40 to-transparent py-5"
+          ? "bg-gradient-to-r from-[#ffffff]/90 via-[#fcf0f0]/90 to-[#ffffff]/90 backdrop-blur-md py-3 shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-[#f3f1f1]/50"
+          : "bg-gradient-to-b from-[#ead3d3]/90 via-[#ead3d3]/40 to-transparent py-5 border-[#ead3d3]/30"
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
